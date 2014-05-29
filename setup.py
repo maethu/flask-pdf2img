@@ -11,5 +11,6 @@ setup(
                       'Flask-Cache',
                       'Flask-Login',
                       'Flask-SQLAlchemy',
+                      'Flask-WTF',
                       'Flask-Admin']
 )
