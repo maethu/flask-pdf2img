@@ -13,11 +13,12 @@ from flask.ext.cache import Cache
 from flask.ext.sqlalchemy import SQLAlchemy
 from pdf2img import Pdf2Img
 from tempfile import NamedTemporaryFile
+from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash
 from wtforms import fields
 from wtforms import form
 from wtforms import validators
 import os
-
 
 app = Flask(__name__)
 
@@ -53,6 +54,10 @@ class User(db.Model):
     login = db.Column(db.String(120))
     password = db.Column(db.String(64))
 
+    def __init__(self, *args, **kwargs):
+        super(User, self).__init__(*args, **kwargs)
+        self.password = generate_password_hash(self.password)
+
     # Flask-Login integration
     def is_authenticated(self):
         return True
@@ -84,7 +89,7 @@ class LoginForm(form.Form):
         if user is None:
             raise validators.ValidationError('Invalid user')
 
-        if user.password != self.password.data:
+        if not check_password_hash(user.password, self.password.data):
             raise validators.ValidationError('Invalid password')
 
     def get_user(self):
@@ -129,6 +134,7 @@ class AuthModelView(ModelView):
         return login.current_user.is_authenticated()
 
 admin.add_view(AuthModelView(ApiKeys, db.session))
+admin.add_view(AuthModelView(User, db.session))
 
 
 @app.route('/')
