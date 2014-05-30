@@ -14,7 +14,6 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from pdf2img import Pdf2Img
 from tempfile import NamedTemporaryFile
 from werkzeug.security import check_password_hash
-from werkzeug.security import generate_password_hash
 from wtforms import fields
 from wtforms import form
 from wtforms import validators
@@ -30,53 +29,15 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{0}'.format(
     app.config['DATABASE_FILE'])
 app.config['SQLALCHEMY_ECHO'] = True
 
+
 db = SQLAlchemy(app)
+from pdf2img.web.models import ApiKeys
+from pdf2img.web.models import User
+
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 converter = Pdf2Img()
-
-
-class ApiKeys(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    domain = db.Column(db.String(120), unique=True)
-    apikey = db.Column(db.String(120), unique=True)
-
-    def __repr__(self):
-        return '<APIKey for {0}>' % self.domain
-
-    def __unicode__(self):
-        return self.domain
-
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    login = db.Column(db.String(120))
-    password = db.Column(db.String(64))
-
-    def __init__(self, *args, **kwargs):
-        super(User, self).__init__(*args, **kwargs)
-        self.password = generate_password_hash(self.password)
-
-    # Flask-Login integration
-    def is_authenticated(self):
-        return True
-
-    def is_anonymous(self):
-        return False
-
-    def is_active(self):
-        return True
-
-    def get_id(self):
-        return self.id
-
-    # Required for administrative interface
-    def __unicode__(self):
-        return self.login
-
-    def __repr__(self):
-        return '<User for {0}>' % self.login
 
 
 class LoginForm(form.Form):
