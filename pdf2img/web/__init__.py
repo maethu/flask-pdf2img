@@ -1,26 +1,19 @@
 from flask import Flask
 from flask import make_response
-from flask import redirect
 from flask import request
-from flask import url_for
 from flask.ext import login
 from flask.ext.admin import Admin
-from flask.ext.admin import AdminIndexView
-from flask.ext.admin import expose
-from flask.ext.admin import helpers
-from flask.ext.admin.contrib.sqla import ModelView
 from flask.ext.cache import Cache
 from flask.ext.sqlalchemy import SQLAlchemy
 from pdf2img import Pdf2Img
 from tempfile import NamedTemporaryFile
-from werkzeug.security import check_password_hash
-from wtforms import fields
-from wtforms import form
-from wtforms import validators
 import os
 
-app = Flask(__name__)
 
+app = Flask(__name__)
+converter = Pdf2Img()
+
+# App config
 # Create dummy secrey key so we can use sessions
 app.config['SECRET_KEY'] = '123456790'
 
@@ -29,7 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///{0}'.format(
     app.config['DATABASE_FILE'])
 app.config['SQLALCHEMY_ECHO'] = True
 
-
+# Database
 db = SQLAlchemy(app)
 from pdf2img.web.models import ApiKeys
 from pdf2img.web.models import User
@@ -37,62 +30,15 @@ from pdf2img.web.models import User
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
-converter = Pdf2Img()
 
-
-class LoginForm(form.Form):
-    login = fields.TextField(validators=[validators.required()])
-    password = fields.PasswordField(validators=[validators.required()])
-
-    def validate_login(self, field):
-        user = self.get_user()
-
-        if user is None:
-            raise validators.ValidationError('Invalid user')
-
-        if not check_password_hash(user.password, self.password.data):
-            raise validators.ValidationError('Invalid password')
-
-    def get_user(self):
-        return db.session.query(User).filter_by(login=self.login.data).first()
-
-
-class AdminLoginView(AdminIndexView):
-
-    @expose('/')
-    def index(self):
-        if not login.current_user.is_authenticated():
-            return redirect(url_for('.login_view'))
-        return super(AdminLoginView, self).index()
-
-    @expose('/login/', methods=('GET', 'POST'))
-    def login_view(self):
-        # handle user login
-        form = LoginForm(request.form)
-        if helpers.validate_form_on_submit(form):
-            user = form.get_user()
-            login.login_user(user)
-
-        if login.current_user.is_authenticated():
-            return redirect(url_for('.index'))
-        self._template_args['form'] = form
-        return super(AdminLoginView, self).index()
-
-    @expose('/logout/')
-    def logout_view(self):
-        login.logout_user()
-        return redirect(url_for('.index'))
+# Admin interface
+from pdf2img.web.admin import AdminLoginView
+from pdf2img.web.admin import AuthModelView
 
 admin = Admin(app,
               name="Pdf2Img",
               index_view=AdminLoginView(),
               base_template='admin_main.html')
-
-
-class AuthModelView(ModelView):
-
-    def is_accessible(self):
-        return login.current_user.is_authenticated()
 
 admin.add_view(AuthModelView(ApiKeys, db.session))
 admin.add_view(AuthModelView(User, db.session))
