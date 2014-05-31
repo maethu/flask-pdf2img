@@ -8,7 +8,7 @@ class ApiKeys(db.Model):
     apikey = db.Column(db.String(120), unique=True)
 
     def __repr__(self):
-        return '<APIKey for {0}>' % self.domain
+        return '<APIKey for {0}>'.format(self.domain)
 
     def __unicode__(self):
         return self.domain
@@ -41,4 +41,4 @@ class User(db.Model):
         return self.login
 
     def __repr__(self):
-        return '<User for {0}>' % self.login
+        return '<User for {0}>'.format(self.login)

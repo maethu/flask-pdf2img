@@ -49,15 +49,28 @@ def index():
     return "This is the pdf2img service... stay tuned"
 
 
-@app.route('/input', methods=['GET', 'POST'])
+def check_apikey_domain(domain, apikey):
+    # XXX replace domain  localhost
+    record = ApiKeys.query.filter_by(domain='localhost').first()
+
+    if not record:
+        return False
+    return record.apikey == apikey
+
+
+@app.route('/input', methods=['POST'])
 def input():
 
-    files = request.files
-    if len(files) != 1:
+    apikey = request.form.get('apikey')
+    domain = ''
+#    domain = request... XXX get domain
+
+    if not check_apikey_domain(domain, apikey):
         return 'BADREQUEST'
 
-    # get file
-    file_ = files.values()[0]
+    file_ = request.files.get('file')
+    if file_ is None:
+        return 'BADREQUEST'
 
     # tmp store the file
     tmpfile = NamedTemporaryFile(delete=False)
@@ -71,7 +84,7 @@ def input():
     return str(result)
 
 
-@app.route('/expose/<folderhash>/<image_name>')
+@app.route('/expose/<folderhash>/<image_name>', methods=['GET'])
 @cache.cached(timeout=300)
 def expose(folderhash, image_name):
     path = "{0}/{1}/{2}".format(converter.path, folderhash, image_name)
@@ -103,7 +116,10 @@ def init_db():
     if not os.path.exists(database_path):
         db.create_all()
         admin = User(login="admin", password="admin")
+        apikey = ApiKeys(domain='localhost', apikey='12345')
+
         db.session.add(admin)
+        db.session.add(apikey)
         db.session.commit()
 
 if __name__ == "__main__":
