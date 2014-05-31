@@ -6,8 +6,8 @@ from flask.ext.admin import AdminIndexView
 from flask.ext.admin import expose
 from flask.ext.admin import helpers
 from flask.ext.admin.contrib.sqla import ModelView
-from pdf2img.web import db
-from pdf2img.web.models import User
+from webapp import db
+from webapp.models import User
 from werkzeug.security import check_password_hash
 from wtforms import fields
 from wtforms import form

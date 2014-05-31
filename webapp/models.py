@@ -1,4 +1,4 @@
-from pdf2img.web import db
+from webapp import db
 from werkzeug.security import generate_password_hash
 
 

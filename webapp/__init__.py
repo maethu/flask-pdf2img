@@ -24,16 +24,16 @@ app.config['SQLALCHEMY_ECHO'] = True
 
 # Database
 db = SQLAlchemy(app)
-from pdf2img.web.models import ApiKeys
-from pdf2img.web.models import User
+from webapp.models import ApiKeys
+from webapp.models import User
 
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 
 # Admin interface
-from pdf2img.web.admin import AdminLoginView
-from pdf2img.web.admin import AuthModelView
+from webapp.admin import AdminLoginView
+from webapp.admin import AuthModelView
 
 admin = Admin(app,
               name="Pdf2Img",

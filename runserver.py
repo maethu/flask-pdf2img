@@ -1,5 +1,5 @@
-from pdf2img.web import app
-from pdf2img.web import init_db
+from webapp import app
+from webapp import init_db
 
 if __name__ == "__main__":
     init_db()
