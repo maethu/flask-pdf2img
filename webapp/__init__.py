@@ -50,7 +50,7 @@ def index():
 
 
 def check_apikey_domain(domain, apikey):
-    # XXX replace domain  localhost
+    # XXX replace domain
     record = ApiKeys.query.filter_by(domain='localhost').first()
 
     if not record:

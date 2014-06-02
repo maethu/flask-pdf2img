@@ -14,6 +14,18 @@ class ApiKeys(db.Model):
         return self.domain
 
 
+class Files(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    path = db.Column(db.String(255), unique=True)
+    md5hash = db.Column(db.String(128), unique=True)
+
+    def __repr__(self):
+        return '<File for {0}>'.format(self.domain)
+
+    def __unicode__(self):
+        return self.md5hash
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     login = db.Column(db.String(120))
