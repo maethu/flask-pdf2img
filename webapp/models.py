@@ -17,13 +17,13 @@ class ApiKeys(db.Model):
 class Files(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     path = db.Column(db.String(255), unique=True)
-    md5hash = db.Column(db.String(128), unique=True)
+    sha256hash = db.Column(db.String(256), unique=True)
 
     def __repr__(self):
-        return '<File for {0}>'.format(self.domain)
+        return '<File for {0}>'.format(self.path)
 
     def __unicode__(self):
-        return self.md5hash
+        return self.sha256hash
 
 
 class User(db.Model):

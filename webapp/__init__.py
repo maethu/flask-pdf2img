@@ -6,10 +6,17 @@ from flask.ext.admin import Admin
 from flask.ext.cache import Cache
 from flask.ext.sqlalchemy import SQLAlchemy
 from pdf2img import Pdf2Img
+from storage import FilesystemHelper
 from tempfile import NamedTemporaryFile
+import hashlib
 import os
 
 
+# Filesystem storage
+storage = FilesystemHelper(base_dir='./var')
+storage.create()
+
+# Flask app
 app = Flask(__name__)
 converter = Pdf2Img()
 
@@ -26,6 +33,7 @@ app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
 from webapp.models import ApiKeys
 from webapp.models import User
+from webapp.models import Files
 
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
@@ -42,6 +50,7 @@ admin = Admin(app,
 
 admin.add_view(AuthModelView(ApiKeys, db.session))
 admin.add_view(AuthModelView(User, db.session))
+admin.add_view(AuthModelView(Files, db.session))
 
 
 @app.route('/')
@@ -72,11 +81,24 @@ def input():
     if file_ is None:
         return 'BADREQUEST'
 
-    # tmp store the file
+    # tmp store the file.
     tmpfile = NamedTemporaryFile(delete=False)
     tmp_filename = tmpfile.name
     tmpfile.write(file_.read())
     tmpfile.close()
+
+    file_.seek(0)
+    hash_ = hashlib.sha256(file_.read()).hexdigest()
+    entry = Files(path='', sha256hash=hash_)
+    db.session.add(entry)
+    db.session.commit()
+    id_ = entry.id
+    path = storage.getPathForOID(id_, create=True)
+    entry.path = path
+    db.session.commit()
+
+    converter.path = path
+
     result = converter.convert(tmpfile.name)
 
     os.remove(tmp_filename)
@@ -84,10 +106,15 @@ def input():
     return str(result)
 
 
-@app.route('/expose/<folderhash>/<image_name>', methods=['GET'])
+@app.route('/expose/<has_>/<image_name>', methods=['GET'])
 @cache.cached(timeout=300)
-def expose(folderhash, image_name):
-    path = "{0}/{1}/{2}".format(converter.path, folderhash, image_name)
+def expose(has_, image_name):
+    entry = Files.query.filter_by(sha256hash=has_).first()
+
+    if entry is None:
+        return 'BADREQUEST'
+
+    path = "{0}/{1}".format(entry.path, image_name)
 
     handler = open(path, 'r')
     response = make_response(handler.read())
